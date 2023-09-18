@@ -67,7 +67,3 @@ if __name__ == '__main__':
             print("Query {} average precision: {}".format(query_num + 1, avg_p))
     print("Mean average precision: {}".format(ev.map()))
     print("Elapsed: {} seconds".format(round(time.time() - start_time, 4)))
-
-
-ranker = InL2Ranker()
-ranker.score_one()
