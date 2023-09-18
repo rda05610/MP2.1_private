@@ -4,7 +4,8 @@ import time
 
 import metapy
 import pytoml
-
+#import numpy as np
+#from scipy import stats
 class InL2Ranker(metapy.index.RankingFunction):
     """
     Create a new ranking function in Python that can be used in MeTA.
@@ -34,11 +35,12 @@ def load_ranker(cfg_file):
     return InL2Ranker()
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: {} config.toml".format(sys.argv[0]))
-        sys.exit(1)
+    print("test")
+    #if len(sys.argv) != 2:
+     #   print("Usage: {} config.toml".format(sys.argv[0]))
+      #  sys.exit(1)
 
-    cfg = sys.argv[1]
+    cfg = "config.toml"
     print('Building or loading index...')
     idx = metapy.index.make_inverted_index(cfg)
     ranker = load_ranker(cfg)
@@ -57,6 +59,8 @@ if __name__ == '__main__':
     query_path = query_cfg.get('query-path', 'queries.txt')
     query_start = query_cfg.get('query-id-start', 0)
 
+    result_inl2, result_bm25 = [],[]
+
     query = metapy.index.Document()
     print('Running queries')
     with open(query_path) as query_file:
@@ -64,6 +68,44 @@ if __name__ == '__main__':
             query.content(line.strip())
             results = ranker.score(idx, query, top_k)
             avg_p = ev.avg_p(results, query_start + query_num, top_k)
+            result_inl2.append(format(avg_p))
             print("Query {} average precision: {}".format(query_num + 1, avg_p))
+
     print("Mean average precision: {}".format(ev.map()))
     print("Elapsed: {} seconds".format(round(time.time() - start_time, 4)))
+
+    queryBM25 = metapy.index.Document()
+    rankerBM25 = metapy.index.OkapiBM25(k1=1.2,b=0.75,k3=500)
+    eval_BM25 = metapy.index.IREval('config.toml')
+
+    query_cfg = cfg_d['query-runner']
+    query_start = query_cfg.get('query-id-start', 0)
+
+    if query_cfg is None:
+        print("query-runner table needed in {}".format(cfg))
+        sys.exit(1)
+    with open(query_path) as query_file:
+        for query_num, line in enumerate(query_file):
+            queryBM25.content(line.strip())
+            results = rankerBM25.score(idx, queryBM25, top_k)
+            avg_p = eval_BM25.avg_p(results, query_start + query_num, top_k)
+            result_bm25.append(format(avg_p))
+            print("Query {} average precision: {}".format(query_num + 1, avg_p))
+
+    eval_BM25.map()
+
+    with open ('inl2.avg_p.txt','w') as outFile:
+        for res in result_inl2:
+            print(res)
+            outFile.write("%s\n" % res)
+
+    with open ('bm25.avg_p.txt','w') as outFile:
+        for res in result_bm25:
+            outFile.write("%s\n" % res)
+
+    #result_inl2 = np.array(map(float,result_inl2))
+    #result_bm25 = np.array(map(float,result_bm25))
+    #print(stats.ttest_ind(result_inl2,result_bm25).pvalue)
+    #with open ('significance.txt','w') as finalFile:
+        #finalFile.write(str(stats.ttest_ind(result_inl2,result_bm25).pvalue))
+
