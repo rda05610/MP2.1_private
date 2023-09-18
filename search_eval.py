@@ -21,7 +21,7 @@ class InL2Ranker(metapy.index.RankingFunction):
         @see https://meta-toolkit.org/doxygen/structmeta_1_1index_1_1score__data.html
         """
         tfn = math.log(1+(sd.avg_dl/sd.doc_size), 2)
-        return sd.query_term_weight * (tfn / (tfn + self.param)) * math.log((sd.num_docs + 1) / (sd.corpus_term_count *.5),2)
+        return sd.query_term_weight * (tfn / (tfn + self.param)) * math.log(((sd.num_docs + 1) / (sd.corpus_term_count *.5)),2)
        #return (self.param + sd.doc_term_count) / (self.param * sd.doc_unique_terms + sd.doc_size)
 
 
@@ -31,8 +31,7 @@ def load_ranker(cfg_file):
     The parameter to this function, cfg_file, is the path to a
     configuration file used to load the index. You can ignore this for MP2.
     """
-    ranker = InL2Ranker()
-    return ranker.score_one()
+    return InL2Ranker()
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
